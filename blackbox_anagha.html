@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BlackBox — Round 2</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --bg: #0a0a0f;
+            --surface: #13131a;
+            --card: #1a1a24;
+            --border: #2a2a3a;
+            --purple: #7c5cfc;
+            --purple-light: #a68dff;
+            --teal: #00d4aa;
+            --amber: #f5a623;
+            --red: #ff4757;
+            --green: #2ecc71;
+            --text: #e8e8f0;
+            --muted: #6e6e8a;
+            --font: 'Space Grotesk', sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-user-select: none
+        }
+
+        header {
+            padding: 16px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            position: sticky;
+            top: 0;
+            z-index: 100
+        }
+
+        .logo {
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.5px
+        }
+
+        .logo span {
+            color: var(--purple)
+        }
+
+        .prog-wrap {
+            display: flex;
+            gap: 6px
+        }
+
+        .prog-dot {
+            width: 28px;
+            height: 5px;
+            border-radius: 3px;
+            background: var(--border);
+            transition: background .4s
+        }
+
+        .prog-dot.done {
+            background: var(--green)
+        }
+
+        .prog-dot.active {
+            background: var(--purple)
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px 60px
+        }
+
+        .page {
+            width: 100%;
+            max-width: 860px;
+            display: none;
+            flex-direction: column;
+            align-items: center
+        }
+
+        .page.active {
+            display: flex
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--purple-light);
+            margin-bottom: 8px
+        }
+
+        h1 {
+            font-size: 30px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-align: center
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 15px;
+            margin-bottom: 32px;
+            text-align: center;
+            line-height: 1.6;
+            max-width: 600px
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 32px;
+            border-radius: 10px;
+            font-family: var(--font);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all .2s
+        }
+
+        .btn-primary {
+            background: var(--purple);
+            color: #fff
+        }
+
+        .btn-primary:hover {
+            background: var(--purple-light)
+        }
+
+        .btn-green {
+            background: var(--green);
+            color: #000
+        }
+
+        .btn-green:hover {
+            background: #27ae60
+        }
+
+        .feedback-msg {
+            font-size: 14px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            margin-top: 12px;
+            display: none;
+            text-align: center
+        }
+
+        .feedback-msg.error {
+            background: rgba(255, 71, 87, .12);
+            border: 1px solid rgba(255, 71, 87, .3);
+            color: #ff6b78;
+            display: block
+        }
+
+        .feedback-msg.success {
+            background: rgba(46, 204, 113, .12);
+            border: 1px solid rgba(46, 204, 113, .3);
+            color: var(--green);
+            display: block
+        }
+
+        .feedback-msg.warning {
+            background: rgba(245, 166, 35, .12);
+            border: 1px solid rgba(245, 166, 35, .3);
+            color: var(--amber);
+            display: block
+        }
+
+        /* ════ TIMER ════ */
+        #round-timer {
+            display: none;
+            background: rgba(124, 92, 252, .12);
+            border: 1px solid rgba(124, 92, 252, .35);
+            border-radius: 12px;
+            padding: 10px 24px;
+            font-family: var(--mono);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--purple-light);
+            letter-spacing: 2px;
+            align-items: center;
+            gap: 10px
+        }
+
+        #round-timer.show {
+            display: flex
+        }
+
+        #round-timer.warn {
+            background: rgba(245, 166, 35, .12);
+            border-color: rgba(245, 166, 35, .4);
+            color: var(--amber)
+        }
+
+        #round-timer.danger {
+            background: rgba(255, 71, 87, .12);
+            border-color: rgba(255, 71, 87, .4);
+            color: var(--red);
+            animation: blink .7s steps(1) infinite
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: .4
+            }
+        }
+
+        /* ════ LOBBY ════ */
+        #page-lobby {
+            gap: 20px
+        }
+
+        .lobby-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 48px 40px;
+            text-align: center;
+            width: 100%;
+            max-width: 560px
+        }
+
+        .lobby-logo {
+            font-size: 56px;
+            margin-bottom: 16px
+        }
+
+        .lobby-title {
+            font-size: 34px;
+            font-weight: 700;
+            margin-bottom: 8px
+        }
+
+        .lobby-sub {
+            color: var(--muted);
+            font-size: 15px;
+            margin-bottom: 28px;
+            line-height: 1.7
+        }
+
+        .wait-badge {
+            background: rgba(245, 166, 35, .1);
+            border: 1px solid rgba(245, 166, 35, .3);
+            border-radius: 10px;
+            padding: 12px 20px;
+            font-size: 14px;
+            color: var(--amber);
+            margin-bottom: 24px;
+            font-weight: 600
+        }
+
+        .lobby-rules {
+            text-align: left;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 2.2
+        }
+
+        .lobby-rules strong {
+            color: var(--text)
+        }
+
+        /* ════ CHECKPOINT 1 ════ */
+        .instructions-box {
+            background: rgba(124, 92, 252, .08);
+            border: 1px solid rgba(124, 92, 252, .25);
+            border-radius: 14px;
+            padding: 20px 24px;
+            width: 100%;
+            margin-bottom: 24px;
+            font-size: 14px;
+            line-height: 1.9;
+            color: var(--text)
+        }
+
+        .instructions-box strong {
+            color: var(--purple-light)
+        }
+
+        .rule-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 2px
+        }
+
+        .c1-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center
+        }
+
+        .stat-chip {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 20px;
+            text-align: center
+        }
+
+        .stat-val {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: var(--mono)
+        }
+
+        .stat-lbl {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2px
+        }
+
+        .green {
+            color: var(--green)
+        }
+
+        .amber-c {
+            color: var(--amber)
+        }
+
+        #penalty-banner {
+            display: none;
+            background: rgba(255, 71, 87, .12);
+            border: 1px solid rgba(255, 71, 87, .3);
+            border-radius: 12px;
+            padding: 16px 24px;
+            text-align: center;
+            width: 100%;
+            margin-bottom: 16px
+        }
+
+        #penalty-banner.show {
+            display: block
+        }
+
+        .pen-title {
+            color: var(--red);
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 4px
+        }
+
+        .pen-count {
+            font-size: 40px;
+            font-weight: 700;
+            font-family: var(--mono);
+            color: var(--red)
+        }
+
+        .pen-sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 4px
+        }
+
+        /* ════ REVEAL / SHUFFLE OVERLAY ════ */
+        #shuffle-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 15, .88);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 8000;
+            text-align: center;
+            gap: 20px;
+        }
+
+        #shuffle-overlay.show {
+            display: flex
+        }
+
+        .shuf-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            transition: all .3s
+        }
+
+        .shuf-sub {
+            font-size: 15px;
+            color: var(--muted);
+            max-width: 380px;
+            line-height: 1.7;
+            transition: all .3s
+        }
+
+        .shuf-cnt {
+            font-size: 96px;
+            font-weight: 700;
+            font-family: var(--mono);
+            color: var(--purple-light);
+            animation: cntbeat .9s ease-in-out infinite alternate;
+            line-height: 1;
+        }
+
+        @keyframes cntbeat {
+            from {
+                transform: scale(1);
+                text-shadow: 0 0 0 transparent
+            }
+
+            to {
+                transform: scale(1.1);
+                text-shadow: 0 0 40px rgba(124, 92, 252, .6)
+            }
+        }
+
+        .shuf-bar-wrap {
+            width: 320px;
+            height: 7px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden
+        }
+
+        .shuf-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--purple), var(--purple-light));
+            border-radius: 4px;
+            transition: width .12s linear
+        }
+
+        /* ── FLIP GRID ── */
+        .flip-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            width: 100%;
+            position: relative
+        }
+
+        @media(max-width:680px) {
+            .flip-grid {
+                grid-template-columns: repeat(4, 1fr)
+            }
+        }
+
+        .flip-card {
+            aspect-ratio: 3/4;
+            cursor: pointer;
+            perspective: 900px;
+            position: relative;
+            transition: transform .5s cubic-bezier(.34, 1.56, .64, 1), opacity .45s ease;
+        }
+
+        /* initial deal-in animation */
+        .flip-card.dealing {
+            opacity: 0;
+            transform: scale(.55) translateY(40px)
+        }
+
+        .flip-card.deal-in {
+            opacity: 1;
+            transform: scale(1) translateY(0)
+        }
+
+        /* shuffle-fly: override transition to be fast & positional */
+        .flip-card.shuffle-fly {
+            transition: transform .55s cubic-bezier(.4, 0, .2, 1), opacity .4s ease !important;
+        }
+
+        .flip-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform .45s cubic-bezier(.4, 0, .2, 1)
+        }
+
+        .flip-card.flipped .flip-inner,
+        .flip-card.matched .flip-inner,
+        .flip-card.revealed .flip-inner {
+            transform: rotateY(180deg)
+        }
+
+        .flip-front,
+        .flip-back {
+            position: absolute;
+            inset: 0;
+            border-radius: 10px;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            text-align: center;
+            line-height: 1.4
+        }
+
+        .flip-front {
+            border: 2px solid var(--border);
+            transition: border-color .2s, box-shadow .2s;
+            flex-direction: column;
+            gap: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flip-card[data-type="behavior"] .flip-front {
+            background: #100c1e;
+            border-color: rgba(124, 92, 252, .5);
+        }
+
+        .flip-card[data-type="behavior"] .flip-front:hover {
+            border-color: var(--purple);
+            box-shadow: 0 0 0 2px rgba(124, 92, 252, .25);
+        }
+
+        .flip-card[data-type="system"] .flip-front {
+            background: #041410;
+            border-color: rgba(0, 212, 170, .4);
+        }
+
+        .flip-card[data-type="system"] .flip-front:hover {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 2px rgba(0, 212, 170, .2);
+        }
+
+        .flip-front-icon {
+            font-size: 18px;
+            line-height: 1;
+            position: relative;
+            z-index: 1
+        }
+
+        .flip-front-label {
+            font-size: 7px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-family: var(--mono);
+            position: relative;
+            z-index: 1;
+        }
+
+        .flip-card[data-type="behavior"] .flip-front-label {
+            color: rgba(166, 141, 255, .8)
+        }
+
+        .flip-card[data-type="system"] .flip-front-label {
+            color: rgba(0, 212, 170, .7)
+        }
+
+        .flip-front::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px
+        }
+
+        .flip-card[data-type="behavior"] .flip-front::after {
+            background: rgba(124, 92, 252, .6)
+        }
+
+        .flip-card[data-type="system"] .flip-front::after {
+            background: rgba(0, 212, 170, .5)
+        }
+
+        .flip-back {
+            transform: rotateY(180deg);
+            position: relative;
+            overflow: hidden;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.45;
+            flex-direction: column;
+            gap: 0;
+            padding: 10px 8px 8px;
+        }
+
+        .flip-back.type-behavior {
+            background: #110d22;
+            border: 1.5px solid #7c5cfc;
+            color: #c4b0ff;
+        }
+
+        .flip-back.type-system {
+            background: #041612;
+            border: 1.5px solid #00d4aa;
+            color: #7fffdf;
+        }
+
+        .card-art {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.22;
+            pointer-events: none
+        }
+
+        .card-type-tag {
+            position: absolute;
+            top: 5px;
+            left: 0;
+            right: 0;
+            font-size: 7.5px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-family: var(--mono);
+            font-weight: 700;
+            text-align: center;
+            opacity: 0.6;
+        }
+
+        .type-behavior .card-type-tag {
+            color: #a68dff
+        }
+
+        .type-system .card-type-tag {
+            color: #00d4aa
+        }
+
+        .card-main-text {
+            position: relative;
+            z-index: 2;
+            padding: 2px 2px 0;
+            margin-top: 10px;
+            font-size: 10.5px
+        }
+
+        .card-bottom-icon {
+            position: absolute;
+            bottom: 5px;
+            right: 6px;
+            font-size: 11px;
+            opacity: 0.4;
+            z-index: 2
+        }
+
+        .flip-card.matched .flip-back {
+            border-color: var(--green) !important
+        }
+
+        .flip-card.matched .card-art {
+            opacity: 0.12
+        }
+
+        .flip-card.wrong-flash .flip-back {
+            animation: wpulse .5s
+        }
+
+        @keyframes wpulse {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .15
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1
+            }
+        }
+
+        /* ════ CHECKPOINT COMPLETE BANNER ════ */
+        .cp-complete-banner {
+            display: none;
+            width: 100%;
+            max-width: 560px;
+            background: rgba(46, 204, 113, .1);
+            border: 2px solid rgba(46, 204, 113, .5);
+            border-radius: 16px;
+            padding: 24px 32px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .cp-complete-banner.show {
+            display: block
+        }
+
+        .cp-complete-banner .cp-icon {
+            font-size: 40px;
+            margin-bottom: 10px
+        }
+
+        .cp-complete-banner .cp-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--green);
+            margin-bottom: 6px
+        }
+
+        .cp-complete-banner .cp-name {
+            font-family: var(--mono);
+            font-size: 13px;
+            color: var(--teal);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px
+        }
+
+        .cp-complete-banner .cp-sub {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.7
+        }
+
+        /* ════ CHECKPOINT 2 ════ */
+        .gate-wrap {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 16px;
+            width: 100%;
+            margin-bottom: 28px;
+            overflow-x: auto
+        }
+
+        .logic-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            width: 100%
+        }
+
+        .logic-hint {
+            font-size: 13px;
+            color: var(--muted);
+            text-align: center;
+            line-height: 1.9
+        }
+
+        .logic-hint code {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 2px 7px;
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--teal)
+        }
+
+        .expr-input {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 20px;
+            font-family: var(--mono);
+            font-size: 17px;
+            color: var(--text);
+            width: 100%;
+            max-width: 480px;
+            text-align: center;
+            transition: border-color .2s;
+            outline: none
+        }
+
+        .expr-input:focus {
+            border-color: var(--purple)
+        }
+
+        .expr-input.correct {
+            border-color: var(--green);
+            background: rgba(46, 204, 113, .08)
+        }
+
+        .expr-input.wrong {
+            border-color: var(--red);
+            animation: shake .3s
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0)
+            }
+
+            25% {
+                transform: translateX(-6px)
+            }
+
+            75% {
+                transform: translateX(6px)
+            }
+        }
+
+        /* ════ VOLUNTEER OVERLAY ════ */
+        #volunteer-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 10, 15, .97);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            text-align: center;
+            padding: 40px
+        }
+
+        #volunteer-overlay.show {
+            display: flex
+        }
+
+        .vol-icon {
+            font-size: 72px;
+            margin-bottom: 20px;
+            animation: pbig 1s ease-in-out infinite alternate
+        }
+
+        @keyframes pbig {
+            from {
+                transform: scale(1)
+            }
+
+            to {
+                transform: scale(1.1)
+            }
+        }
+
+        .vol-title {
+            font-size: 38px;
+            font-weight: 700;
+            color: var(--green);
+            margin-bottom: 14px
+        }
+
+        .vol-sub {
+            font-size: 18px;
+            color: var(--text);
+            max-width: 500px;
+            margin-bottom: 10px;
+            line-height: 1.7
+        }
+
+        .vol-piece {
+            font-size: 52px;
+            margin: 16px 0;
+            animation: spin 4s linear infinite
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0)
+            }
+
+            to {
+                transform: rotate(360deg)
+            }
+        }
+
+        .vol-note {
+            font-size: 14px;
+            color: var(--muted);
+            margin-bottom: 36px
+        }
+
+        /* ════ TIMED BADGE ════ */
+        .timed-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(245, 166, 35, .1);
+            border: 1px solid rgba(245, 166, 35, .35);
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 14px;
+            color: var(--amber);
+            font-weight: 600;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 560px;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">Black<span>Box</span> · Round 2</div>
+        <div style="display:flex;align-items:center;gap:16px">
+            <div id="round-timer">⏱ <span id="timer-display">25:00</span></div>
+            <div class="prog-wrap">
+                <div class="prog-dot active" id="pd0"></div>
+                <div class="prog-dot" id="pd1"></div>
+                <div class="prog-dot" id="pd2"></div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+
+        <!-- ══════════ LOBBY ══════════ -->
+        <div class="page active" id="page-lobby">
+            <div class="lobby-card">
+                <div class="lobby-logo">⚡</div>
+                <div class="lobby-title">Round 2</div>
+                <div class="lobby-sub">Circuit Thinking Challenge<br />Read the rules, then wait for your volunteer's
+                    signal.</div>
+                <div class="wait-badge">⏳ Do NOT press Start until your volunteer says GO</div>
+                <div class="lobby-rules">
+                    <strong>📋 Before you begin</strong><br /><br />
+                    ⏱ <strong>This round is TIMED — 25 minutes from the moment you press Start.</strong><br />
+                    👀 <strong>When you start, all cards will be revealed for 3 seconds</strong> — study them! Then they
+                    shuffle and you must match pairs from memory.<br />
+                    📵 <strong>No phones allowed</strong> — hand all devices to your volunteer right now.<br />
+                    🧩 Complete each checkpoint to earn a <strong>puzzle piece</strong> handed to you by your
+                    volunteer.<br />
+                    🚨 Raise your hand after each checkpoint — <strong>wait</strong> for the volunteer to come to
+                    you.<br />
+                    ✅ Only click <em>"Got the piece — Continue"</em> once the volunteer is with you.
+                </div>
+                <button class="btn btn-primary" style="font-size:17px;padding:16px 48px" onclick="startRound()">🚀 Start
+                    Round 2</button>
+            </div>
+        </div>
+
+        <!-- ══════════ CHECKPOINT 1 ══════════ -->
+        <div class="page" id="page-c1">
+            <div class="section-label">Checkpoint 1 of 2</div>
+            <h1>Circuit ↔ Real World</h1>
+            <div class="timed-badge">⏱ This round is timed — 25 minutes total. Timer starts when you began Round 2.
+            </div>
+            <div class="instructions-box">
+                <div class="rule-row"><span>🟣</span><span><strong>Purple cards</strong> = circuit behaviors
+                        &nbsp;·&nbsp; <strong>Teal cards</strong> = real-world systems</span></div>
+                <div class="rule-row"><span>🎯</span><span>Flip one purple, then one teal. Matching pairs <strong>stay
+                            face-up</strong>. Wrong pairs flip back.</span></div>
+                <div class="rule-row"><span>🧠</span><span><strong>Memorise positions</strong> — wrong cards flip back,
+                        so remember what you've seen!</span></div>
+                <div class="rule-row"><span>🚨</span><span><strong>3 wrong in a row</strong> = 15-second penalty before
+                        you can flip again.</span></div>
+                <div class="rule-row"><span>✅</span><span>Match all <strong>7 pairs</strong> to complete this
+                        checkpoint.</span></div>
+            </div>
+            <div class="c1-stats">
+                <div class="stat-chip">
+                    <div class="stat-val green" id="s-matched">0</div>
+                    <div class="stat-lbl">Matched</div>
+                </div>
+                <div class="stat-chip">
+                    <div class="stat-val amber-c" id="s-streak">0</div>
+                    <div class="stat-lbl">Wrong streak</div>
+                </div>
+                <div class="stat-chip">
+                    <div class="stat-val" id="s-left">7</div>
+                    <div class="stat-lbl">Remaining</div>
+                </div>
+            </div>
+            <div id="penalty-banner">
+                <div class="pen-title">🚨 3 wrong in a row — cooldown active!</div>
+                <div class="pen-count" id="pen-timer">15</div>
+                <div class="pen-sub">seconds until you can flip again. Think carefully next time!</div>
+            </div>
+            <div class="flip-grid" id="flip-grid"></div>
+            <div class="feedback-msg" id="c1-msg" style="margin-top:20px"></div>
+            <div class="cp-complete-banner" id="cp1-done-banner">
+                <div class="cp-icon">✅</div>
+                <div class="cp-title">Checkpoint Completed!</div>
+                <div class="cp-name">Circuit ↔ Real World</div>
+                <div class="cp-sub">This checkpoint has been verified and completed. Puzzle Piece #1 has been
+                    collected.<br />Proceed to Checkpoint 2.</div>
+            </div>
+        </div>
+
+        <!-- ══════════ CHECKPOINT 2 ══════════ -->
+        <div class="page" id="page-c2">
+            <div class="section-label">Checkpoint 2 of 2</div>
+            <h1>Logic Gates</h1>
+            <div class="timed-badge">⏱ This round is timed — 25 minutes total. Check your timer above.</div>
+            <p class="subtitle">Trace the circuit gate by gate. Write the simplified boolean expression for output
+                <strong style="color:var(--teal)">Y</strong>.
+            </p>
+
+            <div class="gate-wrap">
+                <!--
+      CIRCUIT: Inputs A, B, C, D
+      G1 = NOT A          → A'
+      G2 = B AND C        → BC         (B top-pin y=120, C bot-pin y=148)
+      G3 = G1 OR G2       → A'+BC      (top-pin y=96, bot-pin y=124, centre y=110)
+      G4 = C AND D        → CD         (C top-pin y=213, D bot-pin y=239, centre y=226)
+      G5 = G3 NAND G4     → (A'CD+BCD)'
+    -->
+                <svg width="100%" viewBox="0 0 700 310" xmlns="http://www.w3.org/2000/svg" style="min-width:560px">
+                    <defs>
+                        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5"
+                            orient="auto-start-reverse">
+                            <path d="M1.5 1.5L8.5 5L1.5 8.5" fill="none" stroke="#7c5cfc" stroke-width="1.5"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </marker>
+                        <style>
+                            .w {
+                                stroke: #6060a0;
+                                stroke-width: 2;
+                                fill: none;
+                                stroke-linecap: round;
+                                stroke-linejoin: round
+                            }
+
+                            .wout {
+                                stroke: #7c5cfc;
+                                stroke-width: 2.5;
+                                fill: none;
+                                stroke-linecap: round
+                            }
+
+                            .gbody {
+                                fill: #0e0e1c;
+                                stroke: #7c5cfc;
+                                stroke-width: 1.8
+                            }
+
+                            .bubble {
+                                fill: #0e0e1c;
+                                stroke: #7c5cfc;
+                                stroke-width: 1.8
+                            }
+
+                            .inlbl {
+                                fill: #ddddf5;
+                                font-family: 'Space Grotesk', sans-serif;
+                                font-size: 15px;
+                                font-weight: 700;
+                                dominant-baseline: central
+                            }
+
+                            .glbl {
+                                fill: #a68dff;
+                                font-family: 'JetBrains Mono', monospace;
+                                font-size: 10px;
+                                dominant-baseline: central
+                            }
+
+                            .outlbl {
+                                fill: #00d4aa;
+                                font-family: 'JetBrains Mono', monospace;
+                                font-size: 16px;
+                                font-weight: 700;
+                                dominant-baseline: central
+                            }
+
+                            .jdot {
+                                fill: #9080ff
+                            }
+
+                            .glid {
+                                fill: #606080;
+                                font-family: 'JetBrains Mono', monospace;
+                                font-size: 9px
+                            }
+                        </style>
+                    </defs>
+
+                    <!-- INPUT LABELS -->
+                    <text x="10" y="50" class="inlbl">A</text>
+                    <text x="10" y="120" class="inlbl">B</text>
+                    <text x="10" y="195" class="inlbl">C</text>
+                    <text x="10" y="260" class="inlbl">D</text>
+
+                    <!-- INPUT RAILS -->
+                    <line x1="32" y1="50" x2="85" y2="50" class="w" />
+                    <line x1="32" y1="120" x2="85" y2="120" class="w" />
+                    <line x1="32" y1="195" x2="85" y2="195" class="w" />
+                    <line x1="32" y1="260" x2="85" y2="260" class="w" />
+
+                    <!-- Rail junction dots -->
+                    <circle cx="85" cy="50" r="5" class="jdot" />
+                    <circle cx="85" cy="120" r="5" class="jdot" />
+                    <circle cx="85" cy="195" r="5" class="jdot" />
+                    <circle cx="85" cy="260" r="5" class="jdot" />
+
+                    <!-- ══ G1: NOT A ══ -->
+                    <line x1="85" y1="50" x2="118" y2="50" class="w" />
+                    <polygon points="118,36 156,50 118,64" class="gbody" />
+                    <circle cx="162" cy="50" r="6" class="bubble" />
+                    <!-- G1 output → bend down to G3 top pin y=96 -->
+                    <line x1="168" y1="50" x2="310" y2="50" class="w" />
+                    <line x1="310" y1="50" x2="310" y2="96" class="w" />
+                    <line x1="310" y1="96" x2="317" y2="96" class="w" />
+                    <text x="125" y="50" class="glbl">NOT</text>
+                    <text x="120" y="30" class="glid">G1</text>
+
+                    <!-- ══ G2: B AND C ══ -->
+                    <!-- B → G2 top pin y=120 -->
+                    <line x1="85" y1="120" x2="168" y2="120" class="w" />
+                    <!-- C branches UP from y=195 to G2 bot pin y=148 -->
+                    <line x1="85" y1="195" x2="85" y2="148" class="w" />
+                    <line x1="85" y1="148" x2="168" y2="148" class="w" />
+                    <!-- AND gate G2: left x=168, centre y=(120+148)/2=134 -->
+                    <path d="M168,107 L192,107 Q228,107 228,134 Q228,161 192,161 L168,161 Z" class="gbody" />
+                    <!-- G2 output → G3 bot pin y=124 -->
+                    <line x1="228" y1="134" x2="310" y2="134" class="w" />
+                    <line x1="310" y1="134" x2="317" y2="124" class="w" />
+                    <text x="176" y="134" class="glbl">AND</text>
+                    <text x="192" y="90" class="glid">G2</text>
+
+                    <!-- ══ G3: G1 OR G2 ══ -->
+                    <!-- OR gate: top pin y=96, bot pin y=124, centre y=110 -->
+                    <path d="M317,82 Q337,82 347,82 Q379,82 385,110 Q379,138 347,138 Q337,138 317,138 Q337,110 317,82 Z"
+                        class="gbody" />
+                    <line x1="317" y1="96" x2="324" y2="96" class="w" />
+                    <line x1="317" y1="124" x2="324" y2="124" class="w" />
+                    <!-- G3 output → G5 top -->
+                    <line x1="385" y1="110" x2="500" y2="110" class="w" />
+                    <text x="346" y="110" class="glbl">OR</text>
+                    <text x="354" y="65" class="glid">G3</text>
+
+                    <!-- ══ G4: C AND D ══
+           C rail at y=195 → branch right to G4 top pin y=213
+           D rail at y=260 → straight to G4 bot pin y=239 ... but gate bottom edge IS y=239? 
+           Let's use: gate spans y=207 to y=259, centre y=233
+           top pin y=213, bot pin y=253
+           Matching: C bends from y=195 → y=213, D bends from y=260 → y=253
+      -->
+                    <!-- C: branch right from junction at (85,195), then go right and enter gate top pin -->
+                    <line x1="85" y1="195" x2="168" y2="195" class="w" />
+                    <line x1="168" y1="195" x2="168" y2="213" class="w" />
+                    <!-- D: from (85,260) go right, then angle up to gate bot pin y=253 -->
+                    <line x1="85" y1="260" x2="155" y2="260" class="w" />
+                    <line x1="155" y1="260" x2="155" y2="253" class="w" />
+                    <line x1="155" y1="253" x2="168" y2="253" class="w" />
+                    <!-- AND gate G4: left x=168, top=207, bottom=259, centre=233 -->
+                    <path d="M168,207 L192,207 Q228,207 228,233 Q228,259 192,259 L168,259 Z" class="gbody" />
+                    <!-- G4 output → G5 bottom -->
+                    <line x1="228" y1="233" x2="500" y2="233" class="w" />
+                    <text x="176" y="233" class="glbl">AND</text>
+                    <text x="192" y="191" class="glid">G4</text>
+
+                    <!-- C junction dot at (85,195) — branches to G2 and to G4 -->
+                    <circle cx="85" cy="195" r="5" class="jdot" />
+
+                    <!-- ══ G5: NAND (G3 NAND G4) ══ -->
+                    <!-- G3 output at y=110, bends to NAND top pin y=155 -->
+                    <line x1="500" y1="110" x2="500" y2="155" class="w" />
+                    <line x1="500" y1="155" x2="507" y2="155" class="w" />
+                    <!-- G4 output at y=233, bends to NAND bot pin y=180 -->
+                    <line x1="500" y1="233" x2="500" y2="180" class="w" />
+                    <line x1="500" y1="180" x2="507" y2="180" class="w" />
+                    <!-- NAND gate: left x=507, centre y=(155+180)/2=167.5≈168, top=142, bot=194 -->
+                    <path d="M507,142 L530,142 Q568,142 568,168 Q568,194 530,194 L507,194 Z" class="gbody" />
+                    <circle cx="574" cy="168" r="7" class="bubble" />
+                    <!-- Output Y -->
+                    <line x1="581" y1="168" x2="645" y2="168" class="wout" marker-end="url(#ah)" />
+                    <text x="514" y="168" class="glbl">NAND</text>
+                    <text x="529" y="126" class="glid">G5</text>
+
+                    <!-- OUTPUT LABEL -->
+                    <text x="651" y="163" class="outlbl">Y</text>
+                </svg>
+            </div>
+
+            <div class="logic-section">
+                <div class="logic-hint">
+                    Use <code>*</code> for AND &nbsp;·&nbsp; <code>+</code> for OR &nbsp;·&nbsp; <code>'</code> after a
+                    term for NOT<br />
+                    Use Brackets for your answer, and add appropriate brackets for your answer
+                    Example: <code>A'*B + C*D</code> &nbsp;or&nbsp; <code>(A+B)'*C</code>
+                </div>
+                <input type="text" class="expr-input" id="logic-ans" placeholder="Type Y in terms of A, B, C, D..."
+                    autocomplete="off" spellcheck="false" />
+                <button class="btn btn-primary" onclick="checkLogic()">Submit Answer</button>
+                <div class="feedback-msg" id="c2-msg"></div>
+            </div>
+
+            <div class="cp-complete-banner" id="cp2-done-banner">
+                <div class="cp-icon">✅</div>
+                <div class="cp-title">Checkpoint Completed!</div>
+                <div class="cp-name">Logic Gates</div>
+                <div class="cp-sub">This checkpoint has been verified and completed. Puzzle Piece #2 has been
+                    collected.<br /></div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ══════════ SHUFFLE OVERLAY ══════════ -->
+    <div id="shuffle-overlay">
+        <div class="shuf-title" id="shuf-title">👀 Study the cards!</div>
+        <div class="shuf-sub" id="shuf-sub">Memorise every position — they'll be shuffled when the timer hits zero!
+        </div>
+        <div class="shuf-cnt" id="shuf-cnt">3</div>
+        <div class="shuf-bar-wrap">
+            <div class="shuf-bar" id="shuf-bar" style="width:100%"></div>
+        </div>
+    </div>
+
+    <!-- ══════════ VOLUNTEER OVERLAY ══════════ -->
+    <div id="volunteer-overlay">
+        <div class="vol-icon">🙋</div>
+        <div class="vol-title" id="vol-title">Checkpoint Complete!</div>
+        <div class="vol-sub" id="vol-sub">Raise your hand — your volunteer will bring your puzzle piece!</div>
+        <div class="vol-piece">🧩</div>
+        <div class="vol-note" id="vol-note">Wait until the volunteer hands it to you, then click Continue.</div>
+        <button class="btn btn-green" onclick="continueAfterVol()" style="font-size:16px;padding:16px 48px">
+            ✅ Got the piece — Continue
+        </button>
+    </div>
+
+    <script>
+        // ══ ANTI-CHEAT ══
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.key === 'F12') { e.preventDefault(); return; }
+            if (e.ctrlKey && e.shiftKey && ['I', 'i', 'J', 'j', 'C', 'c'].includes(e.key)) { e.preventDefault(); return; }
+            if (e.ctrlKey && ['u', 'U', 's', 'S'].includes(e.key)) { e.preventDefault(); return; }
+        });
+        history.pushState(null, '', location.href);
+        window.addEventListener('popstate', () => history.pushState(null, '', location.href));
+
+        // ══ STATE ══
+        const STATE_KEY = 'bbRound2State_v2';
+        let gameState = { stage: 0, cp1Done: false, cp2Done: false, timerStarted: false, timerEnd: null, cardsRevealed: false, eliminated: false };
+        function saveState() { sessionStorage.setItem(STATE_KEY, JSON.stringify(gameState)); }
+        function loadState() {
+            try { const r = sessionStorage.getItem(STATE_KEY); if (r) { gameState = JSON.parse(r); return true; } } catch (e) { }
+            return false;
+        }
+
+        // ══ CARD DATA ══
+        const PAIRS = [
+            { id: 1, behavior: "LED ON only if ONE switch is ON (not both)", system: "Staircase lighting (two-way switch)" },
+            { id: 2, behavior: "LED toggles its state every button press", system: "Caps Lock / Power button" },
+            { id: 3, behavior: "LED delays before turning OFF", system: "Lift door closing delay" },
+            { id: 4, behavior: "LED responds to environment change", system: "Auto brightness in phones" },
+            { id: 5, behavior: "LED pulses slowly and rhythmically", system: "Heartbeat monitor" },
+            { id: 6, behavior: "LED turns ON only after holding button", system: "Phone power ON (hold to start)" },
+            { id: 7, behavior: "LED pattern repeats after a delay", system: "Washing machine cycle" },
+        ];
+
+        function behaviorArt() { return `<svg class="card-art" viewBox="0 0 80 110" xmlns="http://www.w3.org/2000/svg"><style>.cl{stroke:#a68dff;stroke-width:1.2;fill:none;stroke-linecap:round}.cd{fill:#a68dff}</style><line x1="5" y1="20" x2="40" y2="20" class="cl"/><line x1="40" y1="20" x2="40" y2="35" class="cl"/><line x1="40" y1="35" x2="70" y2="35" class="cl"/><line x1="10" y1="55" x2="35" y2="55" class="cl"/><line x1="35" y1="55" x2="35" y2="42" class="cl"/><line x1="35" y1="42" x2="65" y2="42" class="cl"/><line x1="15" y1="75" x2="55" y2="75" class="cl"/><line x1="55" y1="75" x2="55" y2="88" class="cl"/><line x1="20" y1="88" x2="55" y2="88" class="cl"/><line x1="5" y1="95" x2="30" y2="95" class="cl"/><line x1="30" y1="95" x2="30" y2="102" class="cl"/><circle cx="40" cy="20" r="2.5" class="cd"/><circle cx="35" cy="55" r="2.5" class="cd"/><circle cx="55" cy="75" r="2.5" class="cd"/><circle cx="30" cy="95" r="2.5" class="cd"/><rect x="44" y="32" width="14" height="6" rx="1.5" class="cl"/><rect x="38" y="39" width="14" height="6" rx="1.5" class="cl"/><rect x="16" y="8" width="12" height="8" rx="1" class="cl"/><line x1="16" y1="12" x2="10" y2="12" class="cl"/><line x1="28" y1="12" x2="34" y2="12" class="cl"/></svg>`; }
+        function systemArt() { return `<svg class="card-art" viewBox="0 0 80 110" xmlns="http://www.w3.org/2000/svg"><style>.sl{stroke:#00d4aa;stroke-width:1;fill:none;stroke-linecap:round}.sd{fill:#00d4aa}</style><ellipse cx="40" cy="55" rx="28" ry="36" class="sl"/><ellipse cx="40" cy="55" rx="14" ry="36" class="sl"/><ellipse cx="40" cy="55" rx="28" ry="14" class="sl"/><ellipse cx="40" cy="55" rx="28" ry="26" class="sl" stroke-opacity="0.5"/><line x1="12" y1="55" x2="68" y2="55" class="sl"/><line x1="40" y1="19" x2="40" y2="91" class="sl"/><circle cx="40" cy="19" r="3" class="sd"/><circle cx="40" cy="91" r="3" class="sd"/><circle cx="12" cy="55" r="3" class="sd"/><circle cx="68" cy="55" r="3" class="sd"/><circle cx="20" cy="32" r="2" class="sd"/><circle cx="60" cy="32" r="2" class="sd"/><circle cx="20" cy="78" r="2" class="sd"/><circle cx="60" cy="78" r="2" class="sd"/><line x1="20" y1="32" x2="40" y2="19" class="sl" stroke-opacity="0.6"/><line x1="60" y1="32" x2="40" y2="19" class="sl" stroke-opacity="0.6"/><line x1="20" y1="78" x2="12" y2="55" class="sl" stroke-opacity="0.6"/><line x1="60" y1="78" x2="68" y2="55" class="sl" stroke-opacity="0.6"/></svg>`; }
+
+        // ══ GAME VARS ══
+        let flipped = [], matchCount = 0, wrongStreak = 0, penaltyOn = false, locked = false, volNext = null, previewActive = false;
+
+        // ══ TIMER ══
+        let timerInterval = null;
+        function startTimer() {
+            if (gameState.timerStarted) return;
+            gameState.timerStarted = true;
+            gameState.timerEnd = Date.now() + 25 * 60 * 1000;
+            saveState(); runTimer();
+        }
+        function runTimer() {
+            const el = document.getElementById('round-timer'), disp = document.getElementById('timer-display');
+            el.classList.add('show');
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const rem = Math.max(0, gameState.timerEnd - Date.now());
+                const m = Math.floor(rem / 60000), s = Math.floor((rem % 60000) / 1000);
+                disp.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                el.classList.remove('warn', 'danger');
+                if (rem <= 60000) el.classList.add('danger');
+                else if (rem <= 300000) el.classList.add('warn');
+                if (rem <= 0) {
+                    clearInterval(timerInterval);
+                    disp.textContent = '00:00';
+                    eliminatePlayer();
+                }
+            }, 500);
+        }
+
+        function eliminatePlayer() {
+            gameState.eliminated = true;
+            saveState();
+            locked = true;
+            previewActive = true;
+            // Show elimination message
+            const elimDiv = document.createElement('div');
+            elimDiv.id = 'elimination-overlay';
+            elimDiv.style.cssText = `
+    position:fixed;inset:0;background:rgba(10,10,15,0.95);backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;
+    justify-content:center;z-index:9999;text-align:center;gap:24px;
+  `;
+            elimDiv.innerHTML = `
+    <div style="font-size:72px;animation:pulse 1.5s infinite">💥</div>
+    <div style="font-size:32px;font-weight:700;color:#ff4757">TIME'S UP!</div>
+    <div style="font-size:18px;color:#a68dff;max-width:500px;line-height:1.6">
+      You have been <strong>ELIMINATED</strong> from this round.<br>
+      Your time has expired. You cannot continue or restart.
+    </div>
+    <div style="font-size:14px;color:#6e6e8a;margin-top:16px">
+      Thank you for participating! 👋
+    </div>
+  `;
+            document.body.appendChild(elimDiv);
+
+            // Prevent any navigation or timer restart
+            window.location.href = 'about:blank';
+        }
+
+        // ══ NAV ══
+        function showPage(id) {
+            if (id === 'page-c2' && !gameState.cp1Done) return;
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            window.scrollTo(0, 0);
+        }
+        function setDots(a) {
+            document.querySelectorAll('.prog-dot').forEach((d, i) => {
+                d.classList.remove('active', 'done');
+                if (i < a - 1) d.classList.add('done'); else if (i === a - 1) d.classList.add('active');
+            });
+        }
+        function setMsg(id, txt, type) { const el = document.getElementById(id); el.textContent = txt; el.className = 'feedback-msg ' + type; }
+
+        // ══ LOBBY ══
+        function startRound() {
+            gameState.stage = 1; saveState();
+            showPage('page-c1'); setDots(1);
+            buildGrid(); startTimer();
+        }
+
+        // ══ SHUFFLE HELPER ══
+        function shuffleArr(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[arr[i], arr[j]] = [arr[j], arr[i]]; } }
+
+        // ══ BUILD GRID — deal → reveal 5s → shuffle animation → play ══
+        function buildGrid() {
+            const g = document.getElementById('flip-grid');
+            g.innerHTML = '';
+            flipped = []; matchCount = 0; wrongStreak = 0; penaltyOn = false; locked = true; previewActive = true;
+            updateStats();
+
+            // Build shuffled card list
+            let cards = [];
+            PAIRS.forEach(p => {
+                cards.push({ pid: p.id, type: 'behavior', text: p.behavior });
+                cards.push({ pid: p.id, type: 'system', text: p.system });
+            });
+            shuffleArr(cards);
+
+            // Create DOM cards (face-down, invisible initially)
+            cards.forEach(c => {
+                const art = c.type === 'behavior' ? behaviorArt() : systemArt();
+                const icon = c.type === 'behavior' ? '⚡' : '🌐';
+                const tag = c.type === 'behavior' ? 'CIRCUIT' : 'SYSTEM';
+                const d = document.createElement('div');
+                d.className = 'flip-card dealing';
+                d.dataset.pid = c.pid; d.dataset.type = c.type;
+                d.innerHTML = `<div class="flip-inner">
+      <div class="flip-front">
+        <div class="flip-front-icon">${icon}</div>
+        <div class="flip-front-label">${tag}</div>
+      </div>
+      <div class="flip-back type-${c.type}">
+        ${art}
+        <span class="card-type-tag">${tag}</span>
+        <span class="card-main-text">${c.text}</span>
+        <span class="card-bottom-icon">${icon}</span>
+      </div>
+    </div>`;
+                d.addEventListener('click', () => onFlip(d));
+                g.appendChild(d);
+            });
+
+            const allCards = Array.from(g.querySelectorAll('.flip-card'));
+
+            // Phase 1: Staggered deal-in pop
+            allCards.forEach((card, i) => {
+                setTimeout(() => { card.classList.remove('dealing'); card.classList.add('deal-in'); }, i * 55 + 50);
+            });
+
+            // Phase 2: Flip all face-up for preview (ONLY if not previously revealed)
+            const dealDone = allCards.length * 55 + 400;
+            setTimeout(() => {
+                // Check if cards were already revealed in this game session
+                if (!gameState.cardsRevealed) {
+                    allCards.forEach(card => card.classList.add('revealed'));
+                    // Wait 3 seconds then flip back
+                    setTimeout(() => {
+                        allCards.forEach(card => card.classList.remove('revealed'));
+                        gameState.cardsRevealed = true;
+                        saveState();
+                        setTimeout(() => {
+                            // Phase 4: Animated shuffle
+                            animateShuffle(g, () => {
+                                previewActive = false; locked = false;
+                                setMsg('c1-msg', '🃏 Cards shuffled — match the pairs!', 'warning');
+                            });
+                        }, 550);
+                    }, 3000);
+                } else {
+                    // Cards were already revealed, skip to shuffle
+                    setTimeout(() => {
+                        // Phase 4: Animated shuffle (no reveal)
+                        animateShuffle(g, () => {
+                            previewActive = false; locked = false;
+                            setMsg('c1-msg', '🃏 Cards shuffled — match the pairs!', 'warning');
+                        });
+                    }, 550);
+                }
+            }, dealDone);
+        }
+
+        // ══ COUNTDOWN OVERLAY ══
+        function runShuffleCountdown(seconds, cb) {
+            const ov = document.getElementById('shuffle-overlay');
+            const cnt = document.getElementById('shuf-cnt');
+            const bar = document.getElementById('shuf-bar');
+            const title = document.getElementById('shuf-title');
+            const sub = document.getElementById('shuf-sub');
+            title.textContent = '👀 Study the cards!';
+            sub.textContent = 'Memorise every position — they shuffle when the timer hits zero!';
+            cnt.textContent = seconds; bar.style.width = '100%';
+            ov.classList.add('show');
+            const startMs = Date.now(), totalMs = seconds * 1000;
+            const iv = setInterval(() => {
+                const elapsed = Date.now() - startMs;
+                const pct = Math.max(0, 1 - elapsed / totalMs);
+                bar.style.width = (pct * 100) + '%';
+                cnt.textContent = Math.max(0, seconds - Math.floor(elapsed / 1000));
+                if (elapsed >= totalMs) {
+                    clearInterval(iv);
+                    title.textContent = '🔀 Shuffling!';
+                    sub.textContent = 'Watch the cards fly…';
+                    cnt.textContent = '✦';
+                    setTimeout(() => { ov.classList.remove('show'); cb(); }, 500);
+                }
+            }, 80);
+        }
+
+        // ══ SHUFFLE ANIMATION ══
+        function animateShuffle(grid, cb) {
+            const cards = Array.from(grid.querySelectorAll('.flip-card'));
+            const gRect = grid.getBoundingClientRect();
+            const cx = gRect.width / 2, cy = gRect.height / 2;
+
+            // Capture each card's current centre relative to grid
+            const pos = cards.map(c => {
+                const r = c.getBoundingClientRect();
+                return { x: r.left - gRect.left + c.offsetWidth / 2, y: r.top - gRect.top + c.offsetHeight / 2 };
+            });
+
+            // Step A: fly all to centre in a fanned pile
+            cards.forEach((c, i) => {
+                const dx = cx - pos[i].x, dy = cy - pos[i].y;
+                const rot = (i % 7 - 3) * 9;
+                c.classList.add('shuffle-fly');
+                c.style.transform = `translate(${dx}px,${dy}px) rotate(${rot}deg) scale(0.82)`;
+                c.style.opacity = '0.75';
+                c.style.zIndex = i;
+            });
+
+            // Step B: Re-order DOM (shuffle), then animate each card flying to its new slot
+            setTimeout(() => {
+                // Capture absolute positions before reorder
+                const preRects = cards.map(c => c.getBoundingClientRect());
+
+                // Shuffle DOM order
+                const copy = [...cards]; shuffleArr(copy); copy.forEach(c => grid.appendChild(c));
+                const newCards = Array.from(grid.querySelectorAll('.flip-card'));
+
+                // Capture new positions (after reorder, cards now in new grid slots)
+                // BUT they're still offset by the pile transform — force layout first
+                newCards.forEach(c => { c.style.transform = `translate(9999px,9999px)`; });
+                // Read new slot positions
+                const newRects = newCards.map(c => c.getBoundingClientRect());
+                // Snap back to centre offset immediately, then transition to new slot
+                newCards.forEach((c, i) => {
+                    const newX = newRects[i].left - gRect.left + c.offsetWidth / 2;
+                    const newY = newRects[i].top - gRect.top + c.offsetHeight / 2;
+                    const dx2 = cx - newX, dy2 = cy - newY;
+                    const rot = (i % 5 - 2) * 6;
+                    c.style.transition = 'none';
+                    c.style.transform = `translate(${dx2}px,${dy2}px) rotate(${rot}deg) scale(0.82)`;
+                    c.style.opacity = '0.7';
+                    c.style.zIndex = newCards.length - i;
+                });
+
+                // Step C: fly to final positions with staggered delay
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    newCards.forEach((c, i) => {
+                        c.classList.add('shuffle-fly');
+                        c.style.transitionDelay = `${i * 28}ms`;
+                        c.style.transform = 'translate(0,0) rotate(0deg) scale(1)';
+                        c.style.opacity = '1';
+                        c.style.zIndex = '';
+                    });
+
+                    const settle = newCards.length * 28 + 650;
+                    setTimeout(() => {
+                        newCards.forEach(c => {
+                            c.classList.remove('shuffle-fly');
+                            c.style.transform = ''; c.style.opacity = '';
+                            c.style.zIndex = ''; c.style.transition = '';
+                            c.style.transitionDelay = '';
+                        });
+                        cb();
+                    }, settle);
+                }));
+            }, 620);
+        }
+
+        // ══ FLIP LOGIC ══
+        function onFlip(card) {
+            if (locked || penaltyOn || previewActive) return;
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+            if (flipped.length >= 2) return;
+            if (flipped.length === 1 && flipped[0].dataset.type === card.dataset.type) {
+                setMsg('c1-msg', '⚠️ Pick one purple (circuit) and one teal (system) card.', 'warning'); return;
+            }
+            card.classList.add('flipped'); flipped.push(card);
+            if (flipped.length === 2) { locked = true; setTimeout(evalPair, 850); }
+        }
+        function evalPair() {
+            const [a, b] = flipped;
+            if (a.dataset.pid === b.dataset.pid) {
+                a.classList.add('matched'); b.classList.add('matched');
+                a.classList.remove('flipped'); b.classList.remove('flipped');
+                wrongStreak = 0; matchCount++; updateStats();
+                setMsg('c1-msg', `✅ Correct match! ${matchCount}/7 pairs found.`, 'success');
+                if (matchCount === 7) setTimeout(() => showVol(1, () => {
+                    gameState.cp1Done = true; gameState.stage = 2; saveState();
+                    document.getElementById('cp1-done-banner').classList.add('show');
+                    showPage('page-c2'); setDots(2);
+                }), 600);
+            } else {
+                a.classList.add('wrong-flash'); b.classList.add('wrong-flash');
+                setTimeout(() => { a.classList.remove('flipped', 'wrong-flash'); b.classList.remove('flipped', 'wrong-flash'); }, 650);
+                wrongStreak++; updateStats();
+                if (wrongStreak >= 3) { wrongStreak = 0; updateStats(); triggerPenalty(); setMsg('c1-msg', '🚨 3 wrong in a row — 15-second cooldown!', 'error'); }
+                else setMsg('c1-msg', `❌ Not a match. Wrong streak: ${wrongStreak}/3.`, 'error');
+            }
+            flipped = []; locked = false;
+        }
+        function triggerPenalty() {
+            penaltyOn = true; let s = 15;
+            const banner = document.getElementById('penalty-banner'), timer = document.getElementById('pen-timer');
+            banner.classList.add('show'); timer.textContent = s;
+            const iv = setInterval(() => {
+                s--; timer.textContent = s;
+                if (s <= 0) { clearInterval(iv); penaltyOn = false; banner.classList.remove('show'); setMsg('c1-msg', '✅ Cooldown over — you can flip again!', 'success'); }
+            }, 1000);
+        }
+        function updateStats() {
+            document.getElementById('s-matched').textContent = matchCount;
+            document.getElementById('s-streak').textContent = wrongStreak;
+            document.getElementById('s-left').textContent = 7 - matchCount;
+        }
+
+        // ══ LOGIC GATES ══
+        function norm(s) { return s.toLowerCase().replace(/\s+/g, '').replace(/[·×∧.*]/g, '').replace(/∨/g, '+').replace(/!/g, "'"); }
+        function checkLogic() {
+            const raw = document.getElementById('logic-ans').value;
+            const inp = document.getElementById('logic-ans');
+            const n = norm(raw);
+            const accepted = ["((a'+bc)(cd))'", "(a'cd+bcd)'", "(a(bc)'+(cd)')", "(cd(a'+b))'", "((a'+bc)cd)'"];
+            const ok = accepted.some(a => norm(a) === n)
+                || (n.endsWith(")'") && n.includes("a'") && n.includes('c') && n.includes('d') && n.includes('b') && n.includes('+'))
+                || (n.endsWith(")'") && n.includes('cd') && (n.includes("a'+b") || n.includes("(a'+b)")));
+            if (ok) {
+                inp.classList.add('correct'); inp.classList.remove('wrong');
+                setMsg('c2-msg', "✅ Correct! Y = (A'·C·D + B·C·D)'", 'success');
+                setTimeout(() => showVol(2, () => { gameState.cp2Done = true; saveState(); document.getElementById('cp2-done-banner').classList.add('show'); }), 800);
+            } else {
+                inp.classList.add('wrong'); inp.classList.remove('correct');
+                setMsg('c2-msg', "❌ Not quite. Trace each gate: G1=NOT A, G2=B·C, G3=G1+G2, G4=C·D, Y=(G3·G4)'", 'error');
+                setTimeout(() => inp.classList.remove('wrong'), 700);
+            }
+        }
+
+        // ══ VOLUNTEER ══
+        const VOL = {
+            1: { title: "Checkpoint 1 Complete! 🎉", sub: "You matched all 7 pairs! Raise your hand — volunteer will bring Puzzle Piece #1." },
+            2: { title: "Checkpoint 2 Complete! 🎉", sub: "You decoded the logic gates! Raise your hand — volunteer will bring Puzzle Piece #2." }
+        };
+        function showVol(n, next) {
+            document.getElementById('vol-title').textContent = VOL[n].title;
+            document.getElementById('vol-sub').textContent = VOL[n].sub;
+            document.getElementById('vol-note').textContent = `Piece #${n} — do NOT click Continue until the volunteer hands it to you.`;
+            volNext = next; document.getElementById('volunteer-overlay').classList.add('show');
+        }
+        function continueAfterVol() {
+            document.getElementById('volunteer-overlay').classList.remove('show');
+            if (volNext) volNext();
+        }
+
+        // ══ RESTORE ON RELOAD ══
+        document.addEventListener('DOMContentLoaded', () => {
+            const restored = loadState();
+
+            // Check if player was eliminated
+            if (restored && gameState.eliminated) {
+                locked = true;
+                previewActive = true;
+                const elimDiv = document.createElement('div');
+                elimDiv.id = 'elimination-overlay';
+                elimDiv.style.cssText = `
+      position:fixed;inset:0;background:rgba(10,10,15,0.95);backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;
+      justify-content:center;z-index:9999;text-align:center;gap:24px;
+    `;
+                elimDiv.innerHTML = `
+      <div style="font-size:72px;animation:pulse 1.5s infinite">💥</div>
+      <div style="font-size:32px;font-weight:700;color:#ff4757">ALREADY ELIMINATED</div>
+      <div style="font-size:18px;color:#a68dff;max-width:500px;line-height:1.6">
+        You have already been <strong>ELIMINATED</strong> from this round.<br>
+        You cannot restart or access the game again.
+      </div>
+      <div style="font-size:14px;color:#6e6e8a;margin-top:16px">
+        Thank you for participating! 👋
+      </div>
+    `;
+                document.body.appendChild(elimDiv);
+                return;
+            }
+
+            if (restored && gameState.stage > 0) {
+                if (gameState.timerStarted && gameState.timerEnd) runTimer();
+                if (gameState.stage === 2 && gameState.cp1Done) {
+                    showPage('page-c2'); setDots(2); buildGrid();
+                    document.getElementById('cp1-done-banner').classList.add('show');
+                    if (gameState.cp2Done) document.getElementById('cp2-done-banner').classList.add('show');
+                } else if (gameState.stage === 1) {
+                    showPage('page-c1'); setDots(1); buildGrid();
+                }
+            }
+            document.getElementById('logic-ans').addEventListener('keydown', e => { if (e.key === 'Enter') checkLogic(); });
+        });
+    </script>
+</body>
+
+</html>
